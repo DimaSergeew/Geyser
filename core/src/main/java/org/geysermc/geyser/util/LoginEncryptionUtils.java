@@ -47,6 +47,8 @@ import org.geysermc.geyser.session.auth.AuthData;
 import org.geysermc.geyser.session.auth.BedrockClientData;
 import org.geysermc.geyser.text.ChatColor;
 import org.geysermc.geyser.text.GeyserLocale;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 import javax.crypto.SecretKey;
 import java.security.KeyPair;
@@ -71,14 +73,18 @@ public class LoginEncryptionUtils {
 
             geyser.getLogger().debug(String.format("Is player data signed? %s", result.signed()));
 
-            if (!result.signed() && !session.getGeyser().getConfig().isEnableProxyConnections()) {
-                session.disconnect(GeyserLocale.getLocaleStringLog("geyser.network.remote.invalid_xbox_account"));
-                return;
-            }
-
             IdentityData extraData = result.identityClaims().extraData;
-            // TODO!!! identity won't persist
-            session.setAuthData(new AuthData(extraData.displayName, extraData.identity, extraData.xuid));
+                  String xuid;
+                  if (result.signed()) {
+                          xuid = extraData.xuid;
+                      } else {
+                          var bytes = ("OfflinePlayer:" + extraData.displayName).getBytes(StandardCharsets.UTF_8);
+                          long lxuid = UUID.nameUUIDFromBytes(bytes).getLeastSignificantBits();
+                          if (lxuid == 0) lxuid = Long.MIN_VALUE;
+                          if (lxuid > 0) lxuid = -lxuid;
+                          xuid = Long.toString(lxuid);
+                      }
+            session.setAuthData(new AuthData(extraData.displayName, extraData.identity, xuid));
             if (authPayload instanceof CertificateChainPayload certificateChainPayload) {
                 session.setCertChainData(certificateChainPayload.getChain());
             } else {

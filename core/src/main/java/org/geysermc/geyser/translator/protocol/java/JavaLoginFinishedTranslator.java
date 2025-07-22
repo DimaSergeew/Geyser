@@ -56,19 +56,6 @@ public class JavaLoginFinishedTranslator extends PacketTranslator<ClientboundLog
 
         session.getGeyser().getSessionManager().addSession(playerEntity.getUuid(), session);
 
-        // Check if they are not using a linked account
-        if (remoteAuthType == AuthType.OFFLINE || playerEntity.getUuid().getMostSignificantBits() == 0) {
-            SkinManager.handleBedrockSkin(playerEntity, session.getClientData());
-        }
-
-        if (remoteAuthType == AuthType.FLOODGATE) {
-            // We'll send the skin upload a bit after the handshake packet (aka this packet),
-            // because otherwise the global server returns the data too fast.
-            // We upload it after we know for sure that the target server
-            // is ready to handle the result of the global server.
-            session.getGeyser().getSkinUploader().uploadSkin(session.getCertChainData(), session.getClientData().getOriginalString());
-        }
-
         // We no longer need these variables; they're just taking up space in memory now
         session.setCertChainData(null);
         session.getClientData().setOriginalString(null);
